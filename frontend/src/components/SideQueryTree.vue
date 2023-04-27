@@ -1,14 +1,18 @@
 <template>
   <v-navigation-drawer
+    ref="drawer"
     absolute
     permanent
-    expand-on-hover
-    width="700"
-    :mini-variant.sync="isNavClosed"
+    left
+    :width="width"
+    :expand-on-hover="isCollapsed"
+    :mini-variant.sync="mini"
   >
-    <div
-      class="pl-2"
-      style="max-width: 100%; min-width: 700px; white-space: nowrap"
+    <!-- The menu items at the top of the navigation drawer -->
+    <v-toolbar
+      width="100%"
+      height="36px"
+      density="compact"
     >
       <NewQueryButton
         text
@@ -38,13 +42,25 @@
       >
         <v-icon>mdi-delete</v-icon>
       </v-btn>
-    </div>
+      <v-spacer />
+      <v-btn
+        text
+        icon
+        tile
+        float-right="true"
+        :title="isCollapsed ? pinButton.title : collapseButton.title"
+        @click="onClickPinOrCollapse"
+      >
+        <v-icon>{{ isCollapsed ? pinButton.icon : collapseButton.icon }}</v-icon>
+      </v-btn>
+    </v-toolbar>
     <v-divider />
-    <v-treeview-independant-parent
+    <!-- The list of queries -->
+    <v-treeview-independent-parent
       ref="componentTreeView"
       v-model="tree"
       :items="getRootDisplayComponents"
-      :class="isNavClosed ? 'closed-tree' : ''"
+      :class="{ 'closed-tree': isCollapsed && mini }"
       :active="active"
       item-key="componentUuid"
       item-text="title"
@@ -55,6 +71,7 @@
       hoverable
       dense
       selectable
+      style="width: max-content"
       @update:active="updateActive"
     >
       <template #prepend="{ item, open, active }">
@@ -93,11 +110,13 @@
         </template>
       </template>
       <template #label="{ item }">
-        <span>{{ isDraft(item) ? "[draft] " : isNew(item) ? "[new] " : "" }}</span>
-        <span :class="isNew(item) ? 'font-weight-medium' : ''">
-          {{ item.title }}</span>
+        <div style="width=max-content">
+          <span>{{ isDraft(item) ? "[draft] " : isNew(item) ? "[new] " : "" }}</span>
+          <span :class="isNew(item) ? 'font-weight-medium' : ''">
+            {{ item.title }}</span>
+        </div>
       </template>
-    </v-treeview-independant-parent>
+    </v-treeview-independent-parent>
   </v-navigation-drawer>
 </template>
 
@@ -109,20 +128,32 @@ import {
   createNewTemplateQueryComponent,
 } from '@/helpers/displayComponent';
 import NewQueryButton from '@/components/NewQueryButton.vue';
-import VTreeviewIndependantParent from '@/components/VTreeviewIndependantParent.vue';
+import VTreeviewIndependentParent from '@/components/VTreeviewIndependentParent.vue';
 
 export default {
-  name: 'SideQueryTree',
+  name: 'SideQueryTreeNew',
   components: {
-    VTreeviewIndependantParent,
+    VTreeviewIndependentParent,
     NewQueryButton,
   },
   data() {
     return {
-      isNavClosed: true,
-      activeUuid: null,
+      width: 275,
+      minWidth: 200,
+      maxWidth: 600,
+      isCollapsed: false,
+      mini: null,
       tree: [],
       prevTree: [],
+      activeUuid: null,
+      collapseButton: {
+        icon: 'mdi-chevron-left',
+        title: 'Collapse pane',
+      },
+      pinButton: {
+        icon: 'mdi-pin-outline',
+        title: 'Pin pane',
+      },
     };
   },
   computed: {
@@ -166,6 +197,13 @@ export default {
       }
     });
     this.loadAllDisplayComponents();
+    this.navDrawerBorder = this.$refs.drawer.$el.querySelector(
+      '.v-navigation-drawer__border',
+    );
+    this.navDrawerBorder.style.backgroundColor = 'light-grey';
+    this.navDrawerBorder.style.width = '3px';
+    this.navDrawerBorder.style.cursor = 'ew-resize';
+    this.setEvents();
   },
   methods: {
     ...mapActions('displayComponent', [
@@ -201,8 +239,66 @@ export default {
         true,
       );
     },
+    onClickPinOrCollapse() {
+      console.log('onClickPinCollapse');
+      this.isCollapsed = !this.isCollapsed;
+      if (this.isCollapsed) {
+        this.navDrawerBorder.style.width = '1px';
+        this.navDrawerBorder.style.cursor = '';
+        const evt = new MouseEvent('mouseleave', {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+          clientX: 20,
+        });
+        this.$refs.drawer.$el.dispatchEvent(evt);
+      } else {
+        this.navDrawerBorder.style.width = '3px';
+        this.navDrawerBorder.style.cursor = 'ew-resize';
+      }
+    },
     async onClickReloadTemplates() {
       await this.reloadQueries();
+    },
+    setEvents() {
+      const { minWidth } = this;
+      const { maxWidth } = this;
+      const el = this.$refs.drawer.$el;
+      const drawerBorder = el.querySelector('.v-navigation-drawer__border');
+      const direction = el.classList.contains('v-navigation-drawer--right')
+        ? 'right'
+        : 'left';
+      function resize(e) {
+        document.body.style.cursor = 'ew-resize';
+        let f = direction === 'right'
+          ? document.body.scrollWidth - e.clientX
+          : e.clientX;
+        if (f < minWidth) {
+          f = minWidth;
+        } else if (f > maxWidth) {
+          f = maxWidth;
+        }
+        el.style.width = `${f}px`;
+      }
+      drawerBorder.addEventListener(
+        'mousedown',
+        (e) => {
+          e.preventDefault();
+          el.style.transition = 'initial';
+          document.addEventListener('mousemove', resize, false);
+        },
+        false,
+      );
+      document.addEventListener(
+        'mouseup',
+        () => {
+          el.style.transition = '';
+          this.width = el.style.width;
+          document.body.style.cursor = '';
+          document.removeEventListener('mousemove', resize, false);
+        },
+        false,
+      );
     },
   },
 };
