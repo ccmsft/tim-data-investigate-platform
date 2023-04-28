@@ -118,9 +118,16 @@
         You must <a href="#" @click="signIn">sign-in</a> first.
       </v-alert>
     </v-container>
-    <v-main v-else-if="loaded">
-      <router-view />
-      <SideQueryTree />
+    <v-main
+      v-else-if="loaded"
+    >
+      <SideQueryTree
+        :nav-collapsed.sync="navCollapsed"
+        :nav-width.sync="navWidth"
+      />
+      <v-container fill-height fluid :style="mainStyle">
+        <router-view />
+      </v-container>
     </v-main>
     <v-container v-else>
       <v-alert
@@ -165,6 +172,8 @@ export default {
     loaded: false,
     changeLogBar: true,
     logout: false,
+    navCollapsed: false,
+    navWidth: 0,
   }),
   computed: {
     wikiUri() {
@@ -172,6 +181,11 @@ export default {
     },
     issueUri() {
       return runtimeConfig.issueUri;
+    },
+    mainStyle() {
+      return {
+        marginLeft: this.navCollapsed ? '0px' : `${this.navWidth - 88}px`,
+      };
     },
   },
   mounted() {
