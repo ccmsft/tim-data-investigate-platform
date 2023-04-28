@@ -1,6 +1,6 @@
 <template>
-  <v-container class="fill-height" fluid>
-    <div style="width: 100%; height: 100%; margin-left: 56px">
+  <v-container fill-height fluid>
+    <div style="width: 100%; height: 100%; ">
       <keep-alive :max="100">
         <component
           :is="componentName"

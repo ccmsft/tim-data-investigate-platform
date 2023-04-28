@@ -171,7 +171,7 @@ export default {
       'isComponent',
     ]),
     active() {
-      return [this.activeUuid];
+      return [this.treeView.activeUuid];
     },
     isNew: () => (item) => 
       item.state.rowCount !== null &&
@@ -198,7 +198,7 @@ export default {
   watch: {
     $route(to, from) {
       if (from.params.uuid !== to.params.uuid) {
-        this.activeUuid = to.params.uuid;
+        this.treeView.activeUuid = to.params.uuid;
       }
     },
   },
@@ -211,7 +211,7 @@ export default {
     });
     eventBus.$on('update:kusto-results', ({ uuid }) => {
       // Results were complete on the active component
-      if (uuid === this.activeUuid) {
+      if (uuid === this.treeView.activeUuid) {
         this.updateComponentState({ uuid, isVisited: true });
       }
     });
@@ -241,14 +241,14 @@ export default {
       if (newValue.length === 1) {
         const uuid = newValue[0];
         this.updateComponentState({ uuid, isVisited: true });
-        if (uuid !== this.activeUuid) {
+        if (uuid !== this.treeView.activeUuid) {
           this.$router.push({ name: 'OpenTriage', params: { uuid } });
         }
       }
     },
     onClickRemoveSelected() {
-      this.removeAllDisplayComponents({ uuidArray: this.tree });
-      if (this.activeUuid && !this.isComponent(this.activeUuid)) {
+      this.removeAllDisplayComponents({ uuidArray: this.treeView.tree });
+      if (this.treeView.activeUuid && !this.isComponent(this.treeView.activeUuid)) {
         this.$router.replace('/');
       }
     },
@@ -277,6 +277,7 @@ export default {
           clientX: 0,
         });
         this.$refs.drawer.$el.dispatchEvent(evt);
+        this.$emit('update:navWidth', 56);
       } else {
         this.navDrawer.border.style.width = '3px';
         this.navDrawer.border.style.cursor = 'ew-resize';

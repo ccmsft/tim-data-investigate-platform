@@ -4,9 +4,8 @@
       style="
         width: 100%;
         height: 100%;
-        margin-left: 56px;
         padding-left: 2em;
-        padding-right: 12em;
+        padding-right: 2em;
       "
     >
       <v-btn

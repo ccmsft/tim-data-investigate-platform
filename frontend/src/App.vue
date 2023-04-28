@@ -125,7 +125,7 @@
         :nav-collapsed.sync="navCollapsed"
         :nav-width.sync="navWidth"
       />
-      <v-container fill-height fluid :style="mainStyle">
+      <v-container fill-height :style="mainStyle">
         <router-view />
       </v-container>
     </v-main>
@@ -184,7 +184,7 @@ export default {
     },
     mainStyle() {
       return {
-        marginLeft: this.navCollapsed ? '0px' : `${this.navWidth - 88}px`,
+        marginLeft: `${this.navWidth}px`,
       };
     },
   },
